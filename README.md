@@ -1,1 +1,1 @@
-# bookManagerSystem
+# bookManagerSystem使用nodejs和mongodb以及easyUI实现的数据crud!!
