@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>图书管理系统首页</title>
+	<meta http-equiv="pragma" content="no-cache">
+	<meta http-equiv="cache-control" content="no-cache">
+	<meta http-equiv="expires" content="0">
+	<meta http-equiv="keywords" content="keyword1,keyword2,keyword3">
+	<% include header.ejs %>
+		<script type="text/javascript">
+			$(function() {
+				obj = {
+					editRow: undefined,
+					add: function() {
+						$('#save,#redo').show();
+						if (this.editRow == undefined) {
+							//添加一行
+							$('#blist').datagrid('insertRow', {
+								index: 0,
+								row: {},
+							});
+							//将第一行设置为可编辑状态
+							$('#blist').datagrid('beginEdit', 0);
+							this.editRow = 0;
+						}
+					},
+					save: function() {
+						//将第一行设置为结束编辑状态
+						$('#blist').datagrid('endEdit', this.editRow);
+					},
+					redo: function() {
+						$('#save,#redo').hide();
+						this.editRow = undefined;
+						$('#blist').datagrid('rejectChanges');
+					},
+					edit: function() {
+						var rows = $('#blist').datagrid('getSelections');
+						if (rows.length == 1) {
+							if (this.editRow != undefined) {
+								$('#blist').datagrid('endEdit', this.editRow);
+							}
+							if (this.editRow == undefined) {
+								var index = $('#blist').datagrid('getRowIndex', rows[0]);
+								$('#save,#redo').show();
+								$('#blist').datagrid('beginEdit', index);
+								this.editRow = index;
+								$('#blist').datagrid('unselectRow', index);
+							}
+						} else {
+							$.messager.alert('警告', '修改必须或只能选择一行！', 'warning');
+						}
+					},
+					remove: function() {
+						var rows = $('#blist').datagrid('getSelections');
+						if (rows.length == 1) {
+							$.messager.confirm('确定操作', '您确认要删除所选的记录吗？', function(flag) {
+								if (flag) {
+									$.ajax({
+										type: 'POST',
+										url: '/delete',
+										data: {
+											bid: rows[0]['_id'],
+										},
+										beforeSend: function() {
+											$('#blist').datagrid('loading');
+										},
+										success: function(data) {
+											if (data) {
+												$('#blist').datagrid('loaded');
+												$('#blist').datagrid('load');
+												$('#blist').datagrid('unselectAll');
+												$.messager.show({
+													title: '提示',
+													msg: '删除成功！',
+												});
+											}
+										},
+									});
+								}
+							});
+						} else {
+							$.messager.alert('提示', '请选择要删除的记录！', 'info');
+						}
+					},
+				};
+
+				$('#blist').datagrid({
+					width: 800,
+					url: '/bookList',
+					title: '图书详细信息列表',
+					iconCls: 'icon-search',
+					striped: true,
+					nowrap: true,
+					rownumbers: true,
+					singleSelect: true,
+					fitColumns: true,
+					columns: [
+						[{
+							field: '_id',
+							title: '编号',
+							align: 'center',
+							width: 100,
+							hidden: true,
+						}, {
+							field: 'name',
+							title: '书名',
+							align: 'center',
+							width: 100,
+							editor: {
+								type: 'validatebox',
+								options: {
+									required: true,
+									missingMessage: '请填写书名',
+								},
+							},
+						}, {
+							field: 'author',
+							title: '作者',
+							align: 'center',
+							sortable: true,
+							width: 100,
+							editor: {
+								type: 'validatebox',
+								options: {
+									required: true,
+									missingMessage: '请填写作者',
+								},
+							},
+						}, {
+							field: 'publish',
+							title: '出版社',
+							align: 'center',
+							width: 100,
+							editor: {
+								type: 'validatebox',
+								options: {
+									required: true,
+									missingMessage: '请填写出版社',
+								},
+							},
+						}, {
+							field: 'publishdate',
+							title: '出版日期',
+							align: 'center',
+							width: 100,
+							editor: {
+								type: 'datebox',
+								options: {
+									required: true,
+									missingMessage: '请选择出版日期',
+								},
+							},
+							formatter: function ChangeDateFormat(val) {
+								if (val != null) {
+									return val.toString().substring(0,10);
+								}else{
+									return "";
+								}
+							},
+						}, {
+							field: 'page',
+							title: '页数',
+							align: 'center',
+							width: 100,
+							editor: {
+								type: 'validatebox',
+								options: {
+									required: true,
+									missingMessage: '请填写页数',
+								},
+							},
+						}, {
+							field: 'price',
+							title: '价格',
+							align: 'center',
+							editor: {
+								type: 'validatebox',
+								options: {
+									required: true,
+									missingMessage: '请填写价格',
+								},
+							},
+							width: 100,
+						}, {
+							field: 'content',
+							title: '内容摘要',
+							align: 'center',
+							width: 100,
+							editor: {
+								type: 'validatebox',
+								options: {
+									required: true,
+									missingMessage: '请填写内容摘要',
+								},
+							},
+						}]
+					],
+					toolbar: '#tb',
+					pagination: true,
+					pageSize: 3,
+					pageList: [3, 6, 9],
+					pageNumber: 1,
+					remoteSort: false,
+
+					onDblClickRow: function(rowIndex, rowData) {
+						if (obj.editRow != undefined) {
+							$('#blist').datagrid('endEdit', obj.editRow);
+						}
+
+						if (obj.editRow == undefined) {
+							$('#save,#redo').show();
+							$('#blist').datagrid('beginEdit', rowIndex);
+							obj.editRow = rowIndex;
+						}
+					},
+
+					onAfterEdit: function(rowIndex, rowData, changes) {
+						$('#save,#redo').hide();
+
+						var inserted = $('#blist').datagrid('getChanges', 'inserted');
+						var updated = $('#blist').datagrid('getChanges', 'updated');
+
+						var info = '';
+						//新增
+						if (inserted.length > 0) {
+							info = '新增';
+						}
+						//修改
+						if (updated.length > 0) {
+							info = '修改';
+						}
+						//console.log(arrayToJson(rowData));
+						$.ajax({
+							type: 'POST',
+							url: '/saveOrUpdate',
+							data: {
+								rowData: JSON.stringify(rowData),
+							},
+							beforeSend: function() {
+								$('#blist').datagrid('loading');
+							},
+							success: function(data) {
+								if (data) {
+									$('#blist').datagrid('loaded');
+									$('#blist').datagrid('load');
+									$('#blist').datagrid('unselectAll');
+									$.messager.show({
+										title: '提示',
+										msg: info + '成功！',
+									});
+									obj.editRow = undefined;
+								}
+							},
+						});
+					},
+				});
+
+			});
+		</script>
+</head>
+
+<body>
+	<div style="margin:0 auto;align:center;width:850px;">
+		<h1 style="margin:0 auto;align:center;width:400px;">
+			欢迎登录图书管理系统
+		</h1>
+		<div id="tb" style="padding: 5px;">
+			<a class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="obj.add();">添加</a>
+			<a class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="obj.edit();">修改</a>
+			<a class="easyui-linkbutton" iconCls="icon-cancel" plain="true" onclick="obj.remove();">删除</a>
+			<a class="easyui-linkbutton" iconCls="icon-save" plain="true" style="display: none;" id="save" onclick="obj.save();">保存</a>
+			<a class="easyui-linkbutton" iconCls="icon-undo" plain="true" style="display: none;" id="redo" onclick="obj.redo();">取消编辑</a>
+		</div>
+		<table id="blist"></table>
+	</div>
+</body>
+
+</html>

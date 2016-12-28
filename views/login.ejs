@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>BookManager</title>
+	<meta http-equiv="pragma" content="no-cache">
+	<meta http-equiv="cache-control" content="no-cache">
+	<meta http-equiv="expires" content="0">
+	<meta http-equiv="keywords" content="keyword1,keyword2,keyword3">
+	<% include header.ejs %>
+</head>
+<script type="text/javascript">
+	$(function() {
+		$("#login").window({
+			width: 300,
+			height: 210,
+			title: '用户登录',
+			modal: true,
+			resizable: false,
+			maximizable: false,
+		});
+		$(document).dblclick(function() {
+			$('#login').window();
+		});
+		$('#uname').validatebox({
+			required: true,
+			missingMessage: '请填写用户名',
+			tipPosition: 'right',
+		});
+		$('#upwd').validatebox({
+			required: true,
+			missingMessage: '请填写密码',
+			tipPosition: 'right',
+		});
+		$('#submit').click(function() {
+			$.post('/doLogin', {
+				'name': $('#uname').val(),
+				'pwd': $('#upwd').val()
+			}, function(data) {
+				if (data.flag == '0') {
+					$.messager.confirm('提示', '用户名不存在！', function(r) {
+						if (r) {
+							window.location = '/login';
+						}
+					});
+				} else if (data.flag == '-1') {
+					$.messager.confirm('提示', '用户名密码不正确！', function(r) {
+						if (r) {
+							window.location = '/login';
+						}
+					});
+				} else if (data.flag == '1') {
+					window.location = '/index';
+				}
+			});
+		});
+		$("#uname").focus();
+	});
+</script>
+
+<body>
+	<div id="login">
+		<div id="ac">
+			<span style="color:red;font-size:32px;">登录图书管理系统</span><br><br>
+			<div>
+				<label>用户名：<input type="text" name="name" id="uname"></label><br>
+				<br>
+				<label>密&nbsp;&nbsp;码：<input
+					type="password" name="pwd" id="upwd"></label>
+				<br><br>
+				<input id='submit' type="button" value="登录" />
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>
